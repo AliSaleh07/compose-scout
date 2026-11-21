@@ -11,6 +11,7 @@ from compose_scout.rules import (
     check_root_user,
     check_resource_limits,
     check_hardcoded_secrets,
+    check_read_only_filesystem,
 )
 
 
@@ -48,9 +49,6 @@ def test_docker_socket_mount():
 def test_exposed_sensitive_ports():
     svc = {"ports": ["5432:5432", "127.0.0.1:6379:6379", "3306"]}
     findings = check_exposed_ports("db", svc)
-    # 5432:5432 is 0.0.0.0 bound -> should trigger
-    # 127.0.0.1:6379:6379 is loopback -> should NOT trigger
-    # 3306 is 0.0.0.0 bound -> should trigger
     assert len(findings) == 2
     rule_ids = [f.rule_id for f in findings]
     assert all(r == "CS-001" for r in rule_ids)
@@ -61,10 +59,36 @@ def test_hardcoded_secrets_detection():
         "environment": {
             "DB_PASSWORD": "plaintext_super_secret_value",
             "APP_ENV": "production",
-            "API_TOKEN": "${API_TOKEN}",  # Safe env reference
+            "API_TOKEN": "${API_TOKEN}",
         }
     }
     findings = check_hardcoded_secrets("api", svc)
     assert len(findings) == 1
     assert findings[0].rule_id == "CS-008"
     assert "DB_PASSWORD" in findings[0].title
+
+
+def test_root_user_detection():
+    # Root user explicit or missing
+    svc_root = {"user": "root"}
+    findings_root = check_root_user("worker", svc_root)
+    assert len(findings_root) == 1
+    assert findings_root[0].rule_id == "CS-006"
+
+    # Non-root user specified
+    svc_non_root = {"user": "10001:10001"}
+    findings_non_root = check_root_user("worker", svc_non_root)
+    assert len(findings_non_root) == 0
+
+
+def test_resource_limits_and_read_only():
+    # Missing limits
+    svc_unlimited = {}
+    f_limits = check_resource_limits("web", svc_unlimited)
+    assert len(f_limits) == 1
+    assert f_limits[0].rule_id == "CS-007"
+
+    # Missing read-only
+    f_ro = check_read_only_filesystem("web", svc_unlimited)
+    assert len(f_ro) == 1
+    assert f_ro[0].rule_id == "CS-009"
