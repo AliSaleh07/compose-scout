@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "compose-scout"
+version = "1.0.0"
+description = "A static security auditing and configuration linter CLI for Docker Compose files."
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [
+    {name = "Ali Saleh"}
+]
+keywords = ["docker", "docker-compose", "security", "linter", "devops", "audit"]
+dependencies = [
+    "pyyaml>=6.0.1",
+]
+
+[project.scripts]
+scout = "compose_scout.cli:main"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
