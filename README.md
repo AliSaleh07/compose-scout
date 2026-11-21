@@ -61,3 +61,7 @@ scout audit docker-compose.yml --format json -o audit.json
 ```bash
 pytest -v tests/
 ```
+---
+
+## Safe Use & Security Disclaimer
+*Compose Scout is an automated defensive static analysis tool developed strictly for authorized configuration auditing, security compliance reviews, and infrastructure hardening. It must only be used on Docker Compose files and infrastructure configurations you own or have explicit authorization to audit.*
